@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EvoTech Store</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+scroll-behavior:smooth;
+}
+
+body{
+background:#070707;
+color:white;
+overflow-x:hidden;
+}
+
+header{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+padding:22px 8%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(0,0,0,0.65);
+backdrop-filter:blur(12px);
+border-bottom:1px solid rgba(255,255,255,0.08);
+z-index:999;
+}
+
+.logo{
+font-size:30px;
+font-weight:800;
+color:#00aaff;
+letter-spacing:1px;
+}
+
+.menu{
+display:flex;
+gap:30px;
+}
+
+.menu a{
+color:white;
+text-decoration:none;
+font-size:15px;
+transition:0.3s;
+}
+
+.menu a:hover{
+color:#00aaff;
+}
+
+.hero{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+text-align:center;
+flex-direction:column;
+padding:20px;
+background:
+radial-gradient(circle at top,#003366 0%,#070707 55%);
+}
+
+.hero h1{
+font-size:72px;
+max-width:950px;
+line-height:1.1;
+margin-bottom:25px;
+font-weight:800;
+}
+
+.hero p{
+font-size:20px;
+max-width:700px;
+line-height:1.7;
+color:#cfcfcf;
+margin-bottom:40px;
+}
+
+.btn{
+padding:18px 42px;
+background:#00aaff;
+border-radius:60px;
+text-decoration:none;
+color:white;
+font-weight:600;
+transition:0.3s;
+box-shadow:0 0 30px rgba(0,170,255,0.35);
+display:inline-block;
+}
+
+.btn:hover{
+transform:scale(1.05);
+background:#0088cc;
+}
+
+.section{
+padding:110px 8%;
+}
+
+.section-title{
+font-size:46px;
+text-align:center;
+margin-bottom:70px;
+font-weight:700;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+gap:30px;
+}
+
+.card{
+background:#121212;
+border-radius:28px;
+overflow:hidden;
+transition:0.4s;
+border:1px solid rgba(255,255,255,0.05);
+}
+
+.card:hover{
+transform:translateY(-10px);
+box-shadow:0 0 35px rgba(0,170,255,0.15);
+}
+
+.card img{
+width:100%;
+height:280px;
+object-fit:cover;
+}
+
+.card-content{
+padding:28px;
+}
+
+.card-content h3{
+font-size:26px;
+margin-bottom:12px;
+}
+
+.card-content p{
+color:#b5b5b5;
+line-height:1.7;
+margin-bottom:20px;
+}
+
+.price{
+font-size:30px;
+font-weight:700;
+color:#00aaff;
+margin-bottom:20px;
+}
+
+.benefits{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:30px;
+}
+
+.benefit{
+background:#121212;
+padding:45px 35px;
+border-radius:25px;
+text-align:center;
+}
+
+.benefit h3{
+font-size:24px;
+margin-bottom:15px;
+color:#00aaff;
+}
+
+.benefit p{
+color:#bbbbbb;
+line-height:1.6;
+}
+
+.testimonials{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:30px;
+}
+
+.testimonial{
+background:#121212;
+padding:35px;
+border-radius:25px;
+}
+
+.testimonial p{
+line-height:1.8;
+color:#cccccc;
+margin-bottom:20px;
+}
+
+.stars{
+font-size:22px;
+color:#00aaff;
+}
+
+.newsletter{
+background:#0f0f0f;
+padding:80px 8%;
+text-align:center;
+}
+
+.newsletter h2{
+font-size:42px;
+margin-bottom:20px;
+}
+
+.newsletter p{
+color:#bcbcbc;
+margin-bottom:35px;
+}
+
+.newsletter input{
+width:100%;
+max-width:500px;
+padding:18px;
+border:none;
+border-radius:50px;
+margin-bottom:20px;
+font-size:16px;
+outline:none;
+}
+
+footer{
+padding:60px 20px;
+text-align:center;
+background:black;
+border-top:1px solid rgba(255,255,255,0.06);
+}
+
+footer p{
+color:#777777;
+}
+
+.floating-button{
+position:fixed;
+bottom:25px;
+right:25px;
+background:#00aaff;
+color:white;
+padding:18px 25px;
+border-radius:60px;
+text-decoration:none;
+font-weight:600;
+box-shadow:0 0 25px rgba(0,170,255,0.4);
+z-index:999;
+}
+
+@media(max-width:768px){
+
+.hero h1{
+font-size:44px;
+}
+
+.hero p{
+font-size:18px;
+}
+
+.menu{
+display:none;
+}
+
+.section-title{
+font-size:34px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+EvoTech
+</div>
+
+<div class="menu">
+<a href="#">Home</a>
+<a href="#produtos">Produtos</a>
+<a href="#beneficios">Benefícios</a>
+<a href="#avaliacoes">Avaliações</a>
+</div>
+
+</header>
+
+<section class="hero">
+
+<h1>
+Tecnologia Premium Para Um Novo Estilo de Vida
+</h1>
+
+<p>
+Descubra os gadgets mais desejados da internet com qualidade premium, entrega rápida e design moderno.
+</p>
+
+<a href="#produtos" class="btn">
+Comprar Agora
+</a>
+
+</section>
+
+<section class="section" id="produtos">
+
+<h2 class="section-title">
+Produtos em Destaque
+</h2>
+
+<div class="products">
+
+<div class="card">
+
+<img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=1200&auto=format&fit=crop">
+
+<div class="card-content">
+
+<h3>Smartwatch Ultra</h3>
+
+<p>
+Tecnologia avançada com design elegante e bateria de longa duração.
+</p>
+
+<div class="price">
+R$ 197,90
+</div>
+
+<a href="#" class="btn">
+Comprar
+</a>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop">
+
+<div class="card-content">
+
+<h3>Headphone Pro</h3>
+
+<p>
+Som imersivo com cancelamento de ruído e acabamento premium.
+</p>
+
+<div class="price">
+R$ 249,90
+</div>
+
+<a href="#" class="btn">
+Comprar
+</a>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1200&auto=format&fit=crop">
+
+<div class="card-content">
+
+<h3>Case Premium</h3>
+
+<p>
+Proteção moderna e elegante para smartphones premium.
+</p>
+
+<div class="price">
+R$ 89,90
+</div>
+
+<a href="#" class="btn">
+Comprar
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section" id="beneficios">
+
+<h2 class="section-title">
+Por Que Escolher a EvoTech?
+</h2>
+
+<div class="benefits">
+
+<div class="benefit">
+
+<h3>
+Entrega Rápida
+</h3>
+
+<p>
+Envio seguro com rastreamento em tempo real.
+</p>
+
+</div>
+
+<div class="benefit">
+
+<h3>
+Pagamento Seguro
+</h3>
+
+<p>
+Checkout protegido e criptografado.
+</p>
+
+</div>
+
+<div class="benefit">
+
+<h3>
+Suporte Premium
+</h3>
+
+<p>
+Atendimento rápido e eficiente todos os dias.
+</p>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="section" id="avaliacoes">
+
+<h2 class="section-title">
+Avaliações dos Clientes
+</h2>
+
+<div class="testimonials">
+
+<div class="testimonial">
+
+<p>
+“Qualidade absurda. O produto chegou muito rápido e a experiência foi incrível.”
+</p>
+
+<div class="stars">
+★★★★★
+</div>
+
+</div>
+
+<div class="testimonial">
+
+<p>
+“Loja extremamente profissional. Os produtos parecem de marcas famosas.”
+</p>
+
+<div class="stars">
+★★★★★
+</div>
+
+</div>
+
+<div class="testimonial">
+
+<p>
+“Melhor compra que fiz online este ano. Recomendo demais.”
+</p>
+
+<div class="stars">
+★★★★★
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<section class="newsletter">
+
+<h2>
+Receba Ofertas Exclusivas
+</h2>
+
+<p>
+Cadastre seu email e receba promoções especiais.
+</p>
+
+<input type="email" placeholder="Digite seu email">
+
+<br>
+
+<a href="#" class="btn">
+Cadastrar
+</a>
+
+</section>
+
+<footer>
+
+<p>
+© 2026 EvoTech Store — Todos os direitos reservados.
+</p>
+
+</footer>
+
+<a href="#" class="floating-button">
+Comprar
+</a>
+
+</body>
+
+</html>
