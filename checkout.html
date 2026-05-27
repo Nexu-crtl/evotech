@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Checkout | Nexora</title>
+    <meta name="description" content="Finalize sua compra Nexora com Mercado Pago." />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html"><span class="brand-mark">N</span><span>NEXORA</span></a>
+      <nav class="main-nav" aria-label="Navegacao principal">
+        <a href="index.html">Loja</a>
+        <a href="carrinho.html">Carrinho <span class="cart-count">0</span></a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button theme-toggle" type="button" aria-label="Alternar tema" title="Alternar tema"></button>
+        <a class="admin-link" href="admin.html">Admin</a>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="checkout-panel">
+        <div>
+          <p class="eyebrow">Mercado Pago</p>
+          <h1>Finalizar compra</h1>
+          <p class="muted">Revise seus dados e gere o pagamento. Em GitHub Pages, use um link de checkout configurado no admin. Em servidor Node, use a API em <code>server/server.js</code>.</p>
+        </div>
+        <form id="checkoutForm" class="form-grid">
+          <label>Nome completo<input name="name" required placeholder="Seu nome" /></label>
+          <label>E-mail<input name="email" type="email" required placeholder="voce@email.com" /></label>
+          <label>Telefone / WhatsApp<input name="phone" required placeholder="(11) 99999-9999" /></label>
+          <label>CEP<input name="zip" required placeholder="00000-000" /></label>
+          <label class="span-2">Endereco<input name="address" required placeholder="Rua, numero, bairro, cidade" /></label>
+          <label class="span-2">Observacoes<textarea name="notes" rows="3" placeholder="Complemento, referencia ou observacoes"></textarea></label>
+          <button class="button primary span-2" type="submit">Gerar pagamento Mercado Pago</button>
+        </form>
+        <div class="summary-box" id="checkoutSummary"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div><strong>NEXORA</strong><p>Pagamento por Mercado Pago com fluxo simples.</p></div>
+      <div class="social-links" id="socialLinks"></div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
