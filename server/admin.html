@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin privado | Nexora</title>
+    <style>
+      :root { --brand:#083b7a; --accent:#6f42ff; --bg:#07111f; --card:#101b2e; --muted:#9aa8bd; --text:#edf4ff; --line:rgba(255,255,255,.14); --ok:#62c99a; --bad:#f06c74; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:Inter,system-ui,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
+      header { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; gap:16px; align-items:center; padding:16px clamp(16px,4vw,42px); border-bottom:1px solid var(--line); background:rgba(7,17,31,.92); backdrop-filter:blur(16px); }
+      h1,h2,h3,p { margin-top:0; }
+      a { color:inherit; }
+      main { padding:24px clamp(16px,4vw,42px); }
+      .brand { display:flex; gap:10px; align-items:center; font-weight:900; }
+      .mark { display:grid; place-items:center; width:38px; height:38px; border-radius:8px; background:linear-gradient(135deg,var(--brand),var(--accent)); }
+      .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+      .panel, .login { border:1px solid var(--line); border-radius:8px; background:var(--card); padding:18px; }
+      .login { max-width:420px; margin:10vh auto; }
+      label { display:grid; gap:7px; color:var(--muted); font-size:.9rem; }
+      input,textarea,select { width:100%; min-height:42px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#15233a; color:var(--text); font:inherit; }
+      textarea { resize:vertical; }
+      button { min-height:42px; padding:0 14px; border:1px solid transparent; border-radius:8px; color:white; background:linear-gradient(135deg,var(--brand),var(--accent)); font-weight:800; cursor:pointer; }
+      button.secondary { border-color:var(--line); background:#15233a; }
+      button.danger { background:var(--bad); }
+      .stack { display:grid; gap:12px; }
+      .actions { display:flex; gap:10px; flex-wrap:wrap; }
+      .row { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:12px; border:1px solid var(--line); border-radius:8px; background:#15233a; }
+      .muted { color:var(--muted); }
+      .hidden { display:none !important; }
+      .notice { margin:0 0 16px; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#15233a; color:var(--muted); }
+      .ok { color:var(--ok); }
+      @media (max-width: 860px) { .grid { grid-template-columns:1fr; } header { align-items:flex-start; flex-direction:column; } }
+    </style>
+  </head>
+  <body>
+    <section id="loginView" class="login">
+      <div class="brand"><span class="mark">N</span><span>NEXORA ADMIN</span></div>
+      <p class="muted">Painel privado. Este painel so funciona no backend protegido, nao na loja publica estatica.</p>
+      <form id="loginForm" class="stack">
+        <label>Senha administrativa<input name="password" type="password" required autocomplete="current-password" /></label>
+        <button type="submit">Entrar</button>
+      </form>
+      <p id="loginMessage" class="muted"></p>
+    </section>
+
+    <section id="adminView" class="hidden">
+      <header>
+        <div class="brand"><span class="mark">N</span><span>NEXORA ADMIN</span></div>
+        <div class="actions">
+          <a href="/" target="_blank"><button class="secondary" type="button">Abrir loja</button></a>
+          <button id="saveAll" type="button">Salvar alteracoes</button>
+          <button id="logout" class="secondary" type="button">Sair</button>
+        </div>
+      </header>
+      <main>
+        <p class="notice">Link do cliente: <strong>/</strong>. Link privado do admin: <strong>/admin</strong>. A senha fica no arquivo <code>.env</code> do servidor, nunca no site publico.</p>
+        <div class="grid">
+          <section class="panel">
+            <h2>Produtos e fornecedores</h2>
+            <form id="productForm" class="stack">
+              <input name="id" type="hidden" />
+              <label>Nome<input name="name" required /></label>
+              <label>Preco de venda<input name="price" type="number" min="0" step="0.01" required /></label>
+              <label>Imagem URL<input name="image" required /></label>
+              <label>Categoria<input name="category" /></label>
+              <label>Descricao<textarea name="description" rows="3" required></textarea></label>
+              <label>Link do fornecedor / produto dropshipping<input name="supplier" placeholder="https://..." /></label>
+              <div class="actions">
+                <button type="submit">Adicionar/atualizar</button>
+                <button id="clearProduct" class="secondary" type="button">Limpar</button>
+              </div>
+            </form>
+            <div id="productList" class="stack"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Mercado Pago e e-mail</h2>
+            <p class="muted">Tokens, SMTP e webhook ficam no <code>server/.env</code>. Aqui voce define o endpoint usado pela loja.</p>
+            <form id="seoForm" class="stack">
+              <label>Titulo SEO<input name="title" /></label>
+              <label>Descricao SEO<textarea name="description" rows="2"></textarea></label>
+              <label>Keywords<input name="keywords" /></label>
+              <label>Open Graph titulo<input name="ogTitle" /></label>
+              <label>Open Graph descricao<textarea name="ogDescription" rows="2"></textarea></label>
+              <label>Open Graph imagem<input name="ogImage" /></label>
+              <label>Endpoint checkout Mercado Pago<input name="mercadoPagoApi" placeholder="/api/checkout" /></label>
+              <label>Link manual Mercado Pago reserva<input name="mercadoPagoLink" /></label>
+            </form>
+          </section>
+
+          <section class="panel">
+            <h2>Dropshipping Bot</h2>
+            <form id="botForm" class="stack">
+              <label>Status<select name="enabled"><option value="false">Desativado</option><option value="true">Ativado</option></select></label>
+              <label>Endpoint para importar produtos<input name="productEndpoint" placeholder="https://api.dropshippingbot.../products" /></label>
+              <label>Endpoint para enviar pedidos<input name="orderEndpoint" placeholder="https://api.dropshippingbot.../orders" /></label>
+              <label>Token/API key<input name="token" type="password" /></label>
+              <div class="actions">
+                <button id="importBot" type="button">Importar produtos</button>
+              </div>
+            </form>
+            <p class="muted">Como a documentacao publica do Dropshipping Bot nao ficou disponivel, o conector aceita endpoints JSON configuraveis. Quando voce tiver a URL/token oficiais, coloca aqui.</p>
+          </section>
+
+          <section class="panel">
+            <h2>Campanhas e redes</h2>
+            <form id="socialForm" class="stack">
+              <label>Instagram<input name="instagram" /></label>
+              <label>TikTok<input name="tiktok" /></label>
+              <label>YouTube<input name="youtube" /></label>
+              <label>WhatsApp<input name="whatsapp" /></label>
+              <label>Outro link<input name="custom" /></label>
+            </form>
+            <form id="campaignForm" class="stack">
+              <input name="id" type="hidden" />
+              <label>Titulo<input name="title" /></label>
+              <label>Texto<textarea name="text" rows="2"></textarea></label>
+              <label>Link video/conteudo<input name="url" /></label>
+              <label>Produto destacado<select name="productId" id="campaignProduct"></select></label>
+              <div class="actions">
+                <button type="submit">Adicionar campanha</button>
+                <button id="clearCampaign" class="secondary" type="button">Limpar</button>
+              </div>
+            </form>
+            <div id="campaignList" class="stack"></div>
+          </section>
+
+          <section class="panel">
+            <h2>Pedidos</h2>
+            <button id="loadOrders" class="secondary" type="button">Atualizar pedidos</button>
+            <div id="orderList" class="stack"></div>
+          </section>
+        </div>
+      </main>
+    </section>
+
+    <script>
+      let state = null;
+      const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+      const $ = (id) => document.getElementById(id);
+
+      function dataFromForm(form) {
+        return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function fillForm(form, data) {
+        Object.entries(data || {}).forEach(([key, value]) => {
+          if (form.elements[key]) form.elements[key].value = value ?? "";
+        });
+      }
+
+      async function api(url, options = {}) {
+        const response = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Erro na requisicao.");
+        return data;
+      }
+
+      async function loadState() {
+        state = await api("/api/admin/state");
+        $("loginView").classList.add("hidden");
+        $("adminView").classList.remove("hidden");
+        render();
+      }
+
+      function render() {
+        fillForm($("seoForm"), state.seo);
+        fillForm($("socialForm"), state.socials);
+        fillForm($("botForm"), state.integrations?.dropshippingBot || {});
+        $("campaignProduct").innerHTML = state.products.map((product) => `<option value="${product.id}">${product.name}</option>`).join("");
+        $("productList").innerHTML = state.products.map((product) => `
+          <div class="row">
+            <div><strong>${product.name}</strong><p class="muted">${money.format(product.price)} | ${product.category || "sem categoria"} | ${product.supplier || "sem fornecedor"}</p></div>
+            <div class="actions"><button class="secondary" data-edit-product="${product.id}">Editar</button><button class="danger" data-delete-product="${product.id}">Excluir</button></div>
+          </div>
+        `).join("");
+        $("campaignList").innerHTML = (state.campaigns || []).map((campaign) => `
+          <div class="row">
+            <div><strong>${campaign.title}</strong><p class="muted">${campaign.text}</p></div>
+            <div class="actions"><button class="secondary" data-edit-campaign="${campaign.id}">Editar</button><button class="danger" data-delete-campaign="${campaign.id}">Excluir</button></div>
+          </div>
+        `).join("");
+      }
+
+      async function saveAll() {
+        state.seo = dataFromForm($("seoForm"));
+        state.socials = dataFromForm($("socialForm"));
+        state.integrations = state.integrations || {};
+        state.integrations.dropshippingBot = dataFromForm($("botForm"));
+        state.integrations.dropshippingBot.enabled = state.integrations.dropshippingBot.enabled === "true";
+        await api("/api/admin/state", { method: "PUT", body: JSON.stringify(state) });
+        alert("Alteracoes salvas na loja.");
+      }
+
+      $("loginForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          await api("/api/admin/login", { method: "POST", body: JSON.stringify(dataFromForm(event.currentTarget)) });
+          await loadState();
+        } catch (error) {
+          $("loginMessage").textContent = error.message;
+        }
+      });
+
+      $("productForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = dataFromForm(event.currentTarget);
+        const id = data.id || data.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const product = { ...data, id, price: Number(data.price) };
+        state.products = state.products.some((item) => item.id === id) ? state.products.map((item) => item.id === id ? product : item) : [...state.products, product];
+        event.currentTarget.reset();
+        render();
+      });
+
+      $("campaignForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const data = dataFromForm(event.currentTarget);
+        const id = data.id || `camp-${Date.now()}`;
+        const campaign = { ...data, id };
+        state.campaigns = state.campaigns.some((item) => item.id === id) ? state.campaigns.map((item) => item.id === id ? campaign : item) : [...state.campaigns, campaign];
+        event.currentTarget.reset();
+        render();
+      });
+
+      document.addEventListener("click", async (event) => {
+        const editProduct = event.target.closest("[data-edit-product]");
+        const deleteProduct = event.target.closest("[data-delete-product]");
+        const editCampaign = event.target.closest("[data-edit-campaign]");
+        const deleteCampaign = event.target.closest("[data-delete-campaign]");
+        if (editProduct) fillForm($("productForm"), state.products.find((item) => item.id === editProduct.dataset.editProduct));
+        if (deleteProduct && confirm("Excluir produto?")) { state.products = state.products.filter((item) => item.id !== deleteProduct.dataset.deleteProduct); render(); }
+        if (editCampaign) fillForm($("campaignForm"), state.campaigns.find((item) => item.id === editCampaign.dataset.editCampaign));
+        if (deleteCampaign && confirm("Excluir campanha?")) { state.campaigns = state.campaigns.filter((item) => item.id !== deleteCampaign.dataset.deleteCampaign); render(); }
+      });
+
+      $("saveAll").addEventListener("click", saveAll);
+      $("clearProduct").addEventListener("click", () => $("productForm").reset());
+      $("clearCampaign").addEventListener("click", () => $("campaignForm").reset());
+      $("logout").addEventListener("click", async () => { await api("/api/admin/logout", { method: "POST" }); location.reload(); });
+      $("importBot").addEventListener("click", async () => { await saveAll(); const result = await api("/api/admin/dropshipping/import", { method: "POST" }); alert(`${result.imported} produtos importados.`); await loadState(); });
+      $("loadOrders").addEventListener("click", async () => {
+        const orders = await api("/api/admin/orders");
+        $("orderList").innerHTML = orders.slice().reverse().map((order) => `<div class="row"><div><strong>${order.id}</strong><p class="muted">${order.status} | ${money.format(order.total)} | ${order.customer?.email || ""}</p></div></div>`).join("") || "<p class='muted'>Nenhum pedido ainda.</p>";
+      });
+
+      loadState().catch(() => {});
+    </script>
+  </body>
+</html>

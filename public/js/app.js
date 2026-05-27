@@ -32,7 +32,7 @@
   }
 
   function products() {
-    return read(keys.products, NEXORA_DEFAULTS.products);
+    return NEXORA_DEFAULTS.products;
   }
 
   function cart() {
@@ -40,15 +40,15 @@
   }
 
   function seo() {
-    return read(keys.seo, NEXORA_DEFAULTS.seo);
+    return NEXORA_DEFAULTS.seo;
   }
 
   function socials() {
-    return read(keys.socials, NEXORA_DEFAULTS.socials);
+    return NEXORA_DEFAULTS.socials;
   }
 
   function campaigns() {
-    return read(keys.campaigns, NEXORA_DEFAULTS.campaigns);
+    return NEXORA_DEFAULTS.campaigns;
   }
 
   function escapeHtml(value) {
@@ -277,12 +277,13 @@
     write(keys.orders, orders);
 
     const paymentConfig = seo();
-    if (paymentConfig.mercadoPagoApi) {
+    const checkoutEndpoint = paymentConfig.mercadoPagoApi || "/api/checkout";
+    if (checkoutEndpoint) {
       try {
-        const response = await fetch(paymentConfig.mercadoPagoApi, {
+        const response = await fetch(checkoutEndpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, customer: formData })
+          body: JSON.stringify({ items: cart(), customer: formData })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Falha ao gerar pagamento.");
@@ -290,7 +291,7 @@
         location.href = data.init_point || data.sandbox_init_point;
         return;
       } catch (error) {
-        notify(`Nao foi possivel gerar o link Mercado Pago pela API: ${error.message}`);
+        notify(`Checkout online indisponivel: ${error.message}`);
       }
     }
 

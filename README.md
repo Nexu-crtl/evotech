@@ -1,107 +1,121 @@
 # NEXORA
 
-Sistema simples de e-commerce para dropshipping de produtos eletronicos, feito com HTML, CSS e JavaScript puro. Funciona em GitHub Pages porque a loja, o carrinho, o painel admin, SEO, redes sociais e campanhas usam `localStorage`.
+Loja virtual de dropshipping para eletronicos com duas areas separadas:
 
-## Recursos
+- `public/`: loja publica do cliente.
+- `server/`: backend privado com painel admin, Mercado Pago, e-mail, pedidos e integracao Dropshipping Bot.
 
-- Loja responsiva de produtos eletronicos
-- Carrinho com adicionar, remover, quantidade e total automatico
-- Checkout com link Mercado Pago configuravel no painel
-- API Node opcional para gerar preferencia Mercado Pago
-- Painel admin simples em `admin.html`
-- Produtos, fornecedores, SEO, Open Graph, redes e campanhas editaveis
-- Modo claro e escuro salvo no navegador
-- Estrutura leve para GitHub Pages
+## O que mudou na arquitetura
 
-## Como usar localmente
+O cliente nao acessa mais `admin.html` publico. O painel administrativo fica em:
 
-Abra `index.html` diretamente no navegador ou use qualquer servidor estatico simples.
-
-Exemplo com Node instalado:
-
-```bash
-npx serve .
+```text
+/admin
 ```
 
-## Painel administrativo
+Esse painel so abre pelo servidor Node e exige `ADMIN_PASSWORD` configurado no `.env`.
 
-Acesse `admin.html`.
+Se voce hospedar apenas a pasta `public/`, tera uma loja estatica sem painel. Para checkout real, e-mail, pedidos e admin protegido, hospede o projeto com o backend `server/server.js`.
 
-No painel voce pode:
-
-- adicionar, editar e remover produtos;
-- alterar preco, imagem, categoria e link do fornecedor;
-- configurar meta title, description, keywords e Open Graph;
-- configurar links de Instagram, TikTok, YouTube, WhatsApp e link personalizado;
-- cadastrar campanhas e vincular produtos.
-
-Os dados ficam no `localStorage` do navegador. Para transformar dados editados em conteudo inicial definitivo, copie os valores para `js/data.js`.
-
-## Mercado Pago
-
-### Modo GitHub Pages
-
-1. Crie um link de pagamento ou checkout no Mercado Pago.
-2. Abra `admin.html`.
-3. Cole o link no campo `Mercado Pago checkout link`.
-4. Salve.
-
-Ao finalizar a compra, o cliente sera redirecionado para esse link.
-
-### Modo API Node opcional
-
-Para gerar preferencias automaticamente com API, entre na pasta `server`:
+## Rodar localmente
 
 ```bash
 cd server
 npm install
-cp .env.example .env
+copy .env.example .env
 npm run dev
 ```
 
-Edite `.env` e insira seu `MERCADO_PAGO_ACCESS_TOKEN`.
-
-Depois publique essa API em um servidor Node e cole a URL completa do endpoint no campo `Endpoint API Mercado Pago` do painel admin. Exemplo:
+Depois acesse:
 
 ```text
-https://seu-servidor.com/api/create-preference
+Loja:  http://localhost:3000
+Admin: http://localhost:3000/admin
 ```
 
-Por seguranca, nunca coloque o access token no JavaScript publico do GitHub Pages.
+No arquivo `server/.env`, configure:
 
-## Publicar no GitHub Pages
+```text
+ADMIN_PASSWORD=sua-senha
+ADMIN_SECRET=um-segredo-grande
+MERCADO_PAGO_ACCESS_TOKEN=seu-token-mercado-pago
+PUBLIC_URL=https://seu-dominio.com
+MP_WEBHOOK_URL=https://seu-dominio.com/api/webhooks/mercadopago
+SMTP_HOST=smtp.seu-provedor.com
+SMTP_USER=seu-email
+SMTP_PASS=sua-senha
+MAIL_FROM=Nexora <seu-email>
+```
 
-1. Crie um repositorio no GitHub.
-2. Envie os arquivos do projeto para o repositorio.
-3. No GitHub, abra `Settings` > `Pages`.
-4. Em `Build and deployment`, escolha `Deploy from a branch`.
-5. Selecione a branch `main` e a pasta `/root`.
-6. Salve e aguarde o link publicado.
+## Mercado Pago
 
-## Conectar dominio proprio
+O checkout usa Checkout Pro:
 
-1. Em `Settings` > `Pages`, adicione seu dominio em `Custom domain`.
-2. No painel DNS do dominio, crie os registros indicados pelo GitHub.
-3. Para dominio raiz, use os registros `A` do GitHub Pages.
-4. Para subdominio como `www`, use um registro `CNAME`.
-5. Ative `Enforce HTTPS` quando o certificado estiver pronto.
+1. O cliente finaliza a compra na loja.
+2. O backend cria uma preferencia no Mercado Pago.
+3. O cliente paga no ambiente do Mercado Pago.
+4. O webhook `/api/webhooks/mercadopago` atualiza o pedido.
+5. Quando aprovado, o servidor envia e-mail ao cliente.
+6. Se configurado, o servidor envia o pedido ao Dropshipping Bot.
+
+Importante: nunca coloque `MERCADO_PAGO_ACCESS_TOKEN` no frontend.
+
+## Dropshipping Bot
+
+O painel tem uma area para configurar:
+
+- endpoint para importar produtos;
+- endpoint para enviar pedidos;
+- token/API key.
+
+Como a documentacao publica oficial do Dropshipping Bot nao ficou disponivel durante a criacao, o conector foi feito de forma configuravel. Ele aceita uma resposta JSON com array em `products`, `items`, `data` ou na raiz, e tenta mapear campos comuns como `id`, `sku`, `name`, `title`, `price`, `image`, `url` e `category`.
+
+Quando voce tiver a URL/token oficiais da plataforma, basta inserir no painel.
+
+## E-mail de comprovante
+
+O envio usa SMTP via `nodemailer`. Configure seu SMTP no `.env`. O cliente recebe:
+
+- e-mail de pedido recebido;
+- e-mail de pagamento aprovado quando o Mercado Pago confirmar via webhook.
+
+## Hospedagem
+
+Para uma loja completa, use uma hospedagem Node como Render, Railway, VPS, Hostinger com Node, DigitalOcean, Fly.io ou similar.
+
+Envie o repositorio inteiro para o GitHub, conecte esse repositorio na hospedagem e configure:
+
+```text
+Root/working directory: server
+Build command: npm install
+Start command: npm start
+```
+
+Se a hospedagem pedir pasta publica, use:
+
+```text
+public/
+```
+
+Mas nesse modo estatico o admin e o checkout real nao funcionam sozinhos.
 
 ## Estrutura
 
 ```text
 .
-├── index.html
-├── produto.html
-├── carrinho.html
-├── checkout.html
-├── admin.html
-├── css/
-│   └── styles.css
-├── js/
-│   ├── data.js
-│   └── app.js
-└── server/
-    ├── server.js
-    ├── package.json
-    └── .env.example
+├── public/
+│   ├── index.html
+│   ├── produto.html
+│   ├── carrinho.html
+│   ├── checkout.html
+│   ├── css/styles.css
+│   └── js/
+│       ├── app.js
+│       └── data.js
+├── server/
+│   ├── admin.html
+│   ├── server.js
+│   ├── package.json
+│   └── .env.example
+└── README.md
 ```

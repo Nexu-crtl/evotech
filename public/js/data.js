@@ -45,7 +45,15 @@ const NEXORA_DEFAULTS = {
     ogDescription: "Produtos eletronicos selecionados para comprar online com praticidade.",
     ogImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
     mercadoPagoLink: "",
-    mercadoPagoApi: ""
+    mercadoPagoApi: "/api/checkout"
+  },
+  integrations: {
+    dropshippingBot: {
+      enabled: false,
+      productEndpoint: "",
+      orderEndpoint: "",
+      token: ""
+    }
   },
   socials: {
     instagram: "https://instagram.com",
