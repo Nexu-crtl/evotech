@@ -13,6 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const publicDir = path.join(rootDir, "public");
 const dataFile = path.join(publicDir, "js", "data.js");
+const envFile = path.join(__dirname, ".env");
 const ordersFile = path.join(__dirname, "data", "orders.json");
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20,9 +21,11 @@ const port = process.env.PORT || 3000;
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-const mercadoPago = process.env.MERCADO_PAGO_ACCESS_TOKEN
-  ? new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN })
-  : null;
+function getMercadoPago() {
+  return process.env.MERCADO_PAGO_ACCESS_TOKEN
+    ? new MercadoPagoConfig({ accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN })
+    : null;
+}
 
 function readCookies(req) {
   return Object.fromEntries((req.headers.cookie || "").split(";").filter(Boolean).map((cookie) => {
@@ -67,6 +70,79 @@ async function readStoreData() {
 async function writeStoreData(data) {
   const body = `const NEXORA_DEFAULTS = ${JSON.stringify(data, null, 2)};\n`;
   await fs.writeFile(dataFile, body, "utf8");
+}
+
+function parseEnv(text) {
+  return Object.fromEntries(text.split(/\r?\n/).map((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) return null;
+    const [key, ...value] = trimmed.split("=");
+    return [key, value.join("=")];
+  }).filter(Boolean));
+}
+
+async function readEnvConfig() {
+  try {
+    return parseEnv(await fs.readFile(envFile, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+async function writeEnvConfig(updates) {
+  const current = await readEnvConfig();
+  const next = { ...current };
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value !== undefined && value !== "__KEEP__") next[key] = String(value);
+  });
+  const orderedKeys = [
+    "PORT",
+    "ADMIN_PASSWORD",
+    "ADMIN_SECRET",
+    "PUBLIC_URL",
+    "MERCADO_PAGO_ACCESS_TOKEN",
+    "MP_WEBHOOK_URL",
+    "SUCCESS_URL",
+    "FAILURE_URL",
+    "PENDING_URL",
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_SECURE",
+    "SMTP_USER",
+    "SMTP_PASS",
+    "MAIL_FROM",
+    "DROPSHIPPING_ENABLED",
+    "DROPSHIPPING_PRODUCT_ENDPOINT",
+    "DROPSHIPPING_ORDER_ENDPOINT",
+    "DROPSHIPPING_TOKEN"
+  ];
+  const keys = [...orderedKeys, ...Object.keys(next).filter((key) => !orderedKeys.includes(key))];
+  const body = keys.filter((key) => next[key] !== undefined).map((key) => `${key}=${next[key]}`).join("\n") + "\n";
+  await fs.writeFile(envFile, body, "utf8");
+  Object.assign(process.env, next);
+}
+
+function maskedEnv(config) {
+  return {
+    port: config.PORT || "3000",
+    adminPasswordSet: Boolean(config.ADMIN_PASSWORD),
+    publicUrl: config.PUBLIC_URL || "",
+    mercadoPagoAccessTokenSet: Boolean(config.MERCADO_PAGO_ACCESS_TOKEN),
+    mpWebhookUrl: config.MP_WEBHOOK_URL || "",
+    successUrl: config.SUCCESS_URL || "",
+    failureUrl: config.FAILURE_URL || "",
+    pendingUrl: config.PENDING_URL || "",
+    smtpHost: config.SMTP_HOST || "",
+    smtpPort: config.SMTP_PORT || "587",
+    smtpSecure: config.SMTP_SECURE || "false",
+    smtpUser: config.SMTP_USER || "",
+    smtpPassSet: Boolean(config.SMTP_PASS),
+    mailFrom: config.MAIL_FROM || "",
+    dropshippingEnabled: config.DROPSHIPPING_ENABLED || "false",
+    productEndpoint: config.DROPSHIPPING_PRODUCT_ENDPOINT || "",
+    orderEndpoint: config.DROPSHIPPING_ORDER_ENDPOINT || "",
+    dropshippingTokenSet: Boolean(config.DROPSHIPPING_TOKEN)
+  };
 }
 
 async function readOrders() {
@@ -124,16 +200,75 @@ function normalizeBotProducts(payload) {
   })).filter((item) => item.name && item.price > 0);
 }
 
-async function sendDropshippingOrder(order) {
-  const data = await readStoreData();
-  const bot = data.integrations?.dropshippingBot;
-  if (!bot?.enabled || !bot?.orderEndpoint) return false;
+function cleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
 
-  const response = await fetch(bot.orderEndpoint, {
+function firstMatch(html, patterns) {
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return cleanText(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  }
+  return "";
+}
+
+function extractJsonLdProducts(html) {
+  const scripts = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const script of scripts) {
+    try {
+      const parsed = JSON.parse(script[1].trim());
+      const list = Array.isArray(parsed) ? parsed : [parsed, ...(parsed["@graph"] || [])];
+      const product = list.find((item) => item?.["@type"] === "Product" || item?.["@type"]?.includes?.("Product"));
+      if (product) return product;
+    } catch {
+      // Ignore malformed third-party JSON-LD.
+    }
+  }
+  return null;
+}
+
+function productFromHtml(url, html) {
+  const jsonLd = extractJsonLdProducts(html);
+  const offer = Array.isArray(jsonLd?.offers) ? jsonLd.offers[0] : jsonLd?.offers;
+  const image = Array.isArray(jsonLd?.image) ? jsonLd.image[0] : jsonLd?.image;
+  const title = jsonLd?.name || firstMatch(html, [
+    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i,
+    /<title[^>]*>([\s\S]*?)<\/title>/i
+  ]);
+  const description = jsonLd?.description || firstMatch(html, [
+    /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i
+  ]);
+  const priceText = offer?.price || firstMatch(html, [
+    /"price"\s*:\s*"?([0-9]+(?:[.,][0-9]+)?)"?/i,
+    /property=["']product:price:amount["'][^>]+content=["']([^"']+)["']/i,
+    /R\$\s*([0-9.]+,[0-9]{2})/i
+  ]);
+  const parsedPrice = Number(String(priceText).replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, ""));
+  return {
+    id: `link-${crypto.createHash("sha1").update(url).digest("hex").slice(0, 10)}`,
+    name: cleanText(title) || "Produto importado por link",
+    price: Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : 0,
+    image: image || firstMatch(html, [
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+      /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i
+    ]),
+    description: cleanText(description) || "Produto importado por link. Revise descricao, preco e imagem antes de publicar.",
+    supplier: url,
+    category: "Dropshipping"
+  };
+}
+
+async function sendDropshippingOrder(order) {
+  const enabled = process.env.DROPSHIPPING_ENABLED === "true";
+  if (!enabled || !process.env.DROPSHIPPING_ORDER_ENDPOINT) return false;
+
+  const response = await fetch(process.env.DROPSHIPPING_ORDER_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(bot.token ? { Authorization: `Bearer ${bot.token}` } : {})
+      ...(process.env.DROPSHIPPING_TOKEN ? { Authorization: `Bearer ${process.env.DROPSHIPPING_TOKEN}` } : {})
     },
     body: JSON.stringify({
       orderId: order.id,
@@ -182,15 +317,60 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
   res.json(await readOrders());
 });
 
+app.get("/api/admin/settings", requireAdmin, async (req, res) => {
+  res.json(maskedEnv(await readEnvConfig()));
+});
+
+app.put("/api/admin/settings", requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  const current = await readEnvConfig();
+  const updates = {
+    PORT: body.port || current.PORT || "3000",
+    ADMIN_PASSWORD: body.adminPassword || "__KEEP__",
+    ADMIN_SECRET: current.ADMIN_SECRET || crypto.randomBytes(24).toString("hex"),
+    PUBLIC_URL: body.publicUrl || "",
+    MERCADO_PAGO_ACCESS_TOKEN: body.mercadoPagoAccessToken || "__KEEP__",
+    MP_WEBHOOK_URL: body.mpWebhookUrl || (body.publicUrl ? `${body.publicUrl.replace(/\/$/, "")}/api/webhooks/mercadopago` : ""),
+    SUCCESS_URL: body.successUrl || (body.publicUrl ? `${body.publicUrl.replace(/\/$/, "")}/checkout.html?status=success` : ""),
+    FAILURE_URL: body.failureUrl || (body.publicUrl ? `${body.publicUrl.replace(/\/$/, "")}/checkout.html?status=failure` : ""),
+    PENDING_URL: body.pendingUrl || (body.publicUrl ? `${body.publicUrl.replace(/\/$/, "")}/checkout.html?status=pending` : ""),
+    SMTP_HOST: body.smtpHost || "",
+    SMTP_PORT: body.smtpPort || "587",
+    SMTP_SECURE: body.smtpSecure || "false",
+    SMTP_USER: body.smtpUser || "",
+    SMTP_PASS: body.smtpPass || "__KEEP__",
+    MAIL_FROM: body.mailFrom || body.smtpUser || "",
+    DROPSHIPPING_ENABLED: body.dropshippingEnabled || "false",
+    DROPSHIPPING_PRODUCT_ENDPOINT: body.productEndpoint || "",
+    DROPSHIPPING_ORDER_ENDPOINT: body.orderEndpoint || "",
+    DROPSHIPPING_TOKEN: body.dropshippingToken || "__KEEP__"
+  };
+  await writeEnvConfig(updates);
+  res.json(maskedEnv(await readEnvConfig()));
+});
+
+app.post("/api/admin/product-from-link", requireAdmin, async (req, res) => {
+  const url = req.body?.url;
+  if (!url || !/^https?:\/\//i.test(url)) return res.status(400).json({ error: "Informe um link http/https valido." });
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 NexoraProductImporter/1.0",
+      Accept: "text/html,application/xhtml+xml"
+    }
+  });
+  if (!response.ok) return res.status(502).json({ error: `Fornecedor respondeu ${response.status}` });
+  const html = await response.text();
+  res.json(productFromHtml(url, html));
+});
+
 app.post("/api/admin/dropshipping/import", requireAdmin, async (req, res) => {
   const data = await readStoreData();
-  const bot = data.integrations?.dropshippingBot || {};
-  if (!bot.productEndpoint) return res.status(400).json({ error: "Configure o endpoint de produtos do Dropshipping Bot." });
+  if (!process.env.DROPSHIPPING_PRODUCT_ENDPOINT) return res.status(400).json({ error: "Configure o endpoint de produtos dropshipping." });
 
-  const response = await fetch(bot.productEndpoint, {
+  const response = await fetch(process.env.DROPSHIPPING_PRODUCT_ENDPOINT, {
     headers: {
       Accept: "application/json",
-      ...(bot.token ? { Authorization: `Bearer ${bot.token}` } : {})
+      ...(process.env.DROPSHIPPING_TOKEN ? { Authorization: `Bearer ${process.env.DROPSHIPPING_TOKEN}` } : {})
     }
   });
   if (!response.ok) return res.status(502).json({ error: `Dropshipping Bot respondeu ${response.status}` });
@@ -205,6 +385,7 @@ app.post("/api/admin/dropshipping/import", requireAdmin, async (req, res) => {
 
 app.post("/api/checkout", async (req, res) => {
   try {
+    const mercadoPago = getMercadoPago();
     if (!mercadoPago) return res.status(500).json({ error: "Mercado Pago nao configurado no servidor." });
     const store = await readStoreData();
     const items = (req.body.items || []).map((cartItem) => {
@@ -270,6 +451,7 @@ app.post("/api/checkout", async (req, res) => {
 app.post("/api/webhooks/mercadopago", async (req, res) => {
   res.sendStatus(200);
   try {
+    const mercadoPago = getMercadoPago();
     if (!mercadoPago) return;
     const paymentId = req.body?.data?.id || req.query?.["data.id"];
     if (!paymentId) return;

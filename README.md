@@ -19,6 +19,18 @@ Se voce hospedar apenas a pasta `public/`, tera uma loja estatica sem painel. Pa
 
 ## Rodar localmente
 
+No Windows, voce pode dar dois cliques em:
+
+```text
+abrir-admin-nexora.bat
+```
+
+Ele entra na pasta `server`, cria o `.env` se faltar, instala dependencias e inicia a loja/admin.
+
+Esse atalho precisa do Node.js LTS instalado no computador.
+
+Ou rode manualmente:
+
 ```bash
 cd server
 npm install
@@ -31,6 +43,30 @@ Depois acesse:
 ```text
 Loja:  http://localhost:3000
 Admin: http://localhost:3000/admin
+```
+
+## Painel admin
+
+O painel permite:
+
+- editar produtos, preco, imagem, categoria e link do fornecedor;
+- usar o botao magico para colar um link de produto e preencher nome, imagem, descricao e preco automaticamente quando a pagina permitir;
+- editar aparencia da loja: cores, marca, hero, texto principal e raio dos cards;
+- editar SEO, Open Graph, campanhas e redes sociais;
+- configurar Mercado Pago, dominio publico, webhook e SMTP de forma guiada;
+- consultar pedidos;
+- importar catalogo e enviar pedidos para plataformas dropshipping que tenham API.
+
+O link do cliente e:
+
+```text
+https://seu-dominio.com/
+```
+
+O link privado do admin e:
+
+```text
+https://seu-dominio.com/admin
 ```
 
 No arquivo `server/.env`, configure:
@@ -60,7 +96,24 @@ O checkout usa Checkout Pro:
 
 Importante: nunca coloque `MERCADO_PAGO_ACCESS_TOKEN` no frontend.
 
-## Dropshipping Bot
+No admin, basta preencher:
+
+- dominio publico da loja;
+- access token Mercado Pago;
+- SMTP para envio de e-mail;
+- senha do admin.
+
+O painel gera automaticamente URLs de sucesso, falha, pendencia e webhook com base no dominio.
+
+## Dropshipping e importacao por link
+
+O painel tem duas formas de cadastrar produtos sem estoque:
+
+1. Botao magico por link:
+
+Cole o link do fornecedor ou marketplace. O backend tenta ler dados publicos da pagina, como Open Graph, JSON-LD, titulo, imagem e preco. Depois voce revisa e publica.
+
+2. API de plataforma dropshipping:
 
 O painel tem uma area para configurar:
 
@@ -68,7 +121,9 @@ O painel tem uma area para configurar:
 - endpoint para enviar pedidos;
 - token/API key.
 
-Como a documentacao publica oficial do Dropshipping Bot nao ficou disponivel durante a criacao, o conector foi feito de forma configuravel. Ele aceita uma resposta JSON com array em `products`, `items`, `data` ou na raiz, e tenta mapear campos comuns como `id`, `sku`, `name`, `title`, `price`, `image`, `url` e `category`.
+Essas informacoes ficam no `server/.env`, nao no frontend publico.
+
+O conector aceita uma resposta JSON com array em `products`, `items`, `data` ou na raiz, e tenta mapear campos comuns como `id`, `sku`, `name`, `title`, `price`, `image`, `url` e `category`.
 
 Quando voce tiver a URL/token oficiais da plataforma, basta inserir no painel.
 
@@ -99,6 +154,8 @@ public/
 
 Mas nesse modo estatico o admin e o checkout real nao funcionam sozinhos.
 
+No painel admin existe uma area "Colocar no ar" com checklist rapido para copiar os comandos e variaveis essenciais.
+
 ## Estrutura
 
 ```text
@@ -117,5 +174,6 @@ Mas nesse modo estatico o admin e o checkout real nao funcionam sozinhos.
 │   ├── server.js
 │   ├── package.json
 │   └── .env.example
+├── abrir-admin-nexora.bat
 └── README.md
 ```

@@ -51,6 +51,10 @@
     return NEXORA_DEFAULTS.campaigns;
   }
 
+  function appearance() {
+    return NEXORA_DEFAULTS.appearance || {};
+  }
+
   function escapeHtml(value) {
     return String(value || "").replace(/[&<>"']/g, (char) => ({
       "&": "&amp;",
@@ -82,6 +86,7 @@
         const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
         document.documentElement.dataset.theme = next;
         localStorage.setItem(keys.theme, next);
+        applyAppearance();
       });
     });
   }
@@ -106,6 +111,34 @@
     upsertMeta('meta[property="og:title"]', "content", config.ogTitle || config.title);
     upsertMeta('meta[property="og:description"]', "content", config.ogDescription || config.description);
     upsertMeta('meta[property="og:image"]', "content", config.ogImage);
+  }
+
+  function applyAppearance() {
+    const config = appearance();
+    const root = document.documentElement;
+    if (config.primaryColor) root.style.setProperty("--brand", config.primaryColor);
+    if (config.accentColor) root.style.setProperty("--brand-2", config.accentColor);
+    if (config.successColor) root.style.setProperty("--success", config.successColor);
+    const currentTheme = root.dataset.theme || "dark";
+    if (currentTheme === "light" && config.lightBackground) root.style.setProperty("--bg", config.lightBackground);
+    if (currentTheme !== "light" && config.darkBackground) root.style.setProperty("--bg", config.darkBackground);
+    if (config.cardRadius) root.style.setProperty("--radius", `${config.cardRadius}px`);
+    if (config.heroImage) root.style.setProperty("--hero-image", `url("${config.heroImage}")`);
+    document.querySelectorAll(".brand span:last-child").forEach((el) => {
+      el.textContent = config.brandName || "NEXORA";
+    });
+    document.querySelectorAll(".brand-mark").forEach((el) => {
+      el.textContent = config.logoText || "N";
+    });
+    const hero = document.querySelector(".hero-content");
+    if (hero) {
+      const eyebrow = hero.querySelector(".eyebrow");
+      const title = hero.querySelector("h1");
+      const text = hero.querySelector("p:not(.eyebrow)");
+      if (eyebrow) eyebrow.textContent = config.heroEyebrow || eyebrow.textContent;
+      if (title) title.textContent = config.heroTitle || title.textContent;
+      if (text) text.textContent = config.heroText || text.textContent;
+    }
   }
 
   function updateCartCount() {
@@ -443,6 +476,7 @@
   seed();
   applyTheme();
   applySeo();
+  applyAppearance();
   updateCartCount();
   renderProducts();
   renderProductDetail();

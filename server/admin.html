@@ -15,6 +15,8 @@
       .brand { display:flex; gap:10px; align-items:center; font-weight:900; }
       .mark { display:grid; place-items:center; width:38px; height:38px; border-radius:8px; background:linear-gradient(135deg,var(--brand),var(--accent)); }
       .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+      .wide { grid-column:1 / -1; }
+      .mini-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
       .panel, .login { border:1px solid var(--line); border-radius:8px; background:var(--card); padding:18px; }
       .login { max-width:420px; margin:10vh auto; }
       label { display:grid; gap:7px; color:var(--muted); font-size:.9rem; }
@@ -30,7 +32,9 @@
       .hidden { display:none !important; }
       .notice { margin:0 0 16px; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:#15233a; color:var(--muted); }
       .ok { color:var(--ok); }
+      code { color:#d7e5ff; }
       @media (max-width: 860px) { .grid { grid-template-columns:1fr; } header { align-items:flex-start; flex-direction:column; } }
+      @media (max-width: 860px) { .mini-grid { grid-template-columns:1fr; } .wide { grid-column:auto; } }
     </style>
   </head>
   <body>
@@ -56,8 +60,39 @@
       <main>
         <p class="notice">Link do cliente: <strong>/</strong>. Link privado do admin: <strong>/admin</strong>. A senha fica no arquivo <code>.env</code> do servidor, nunca no site publico.</p>
         <div class="grid">
+          <section class="panel wide">
+            <h2>Aparencia da loja</h2>
+            <form id="appearanceForm" class="stack">
+              <div class="mini-grid">
+                <label>Nome da marca<input name="brandName" /></label>
+                <label>Letra/logo curto<input name="logoText" maxlength="3" /></label>
+                <label>Raio dos cards<input name="cardRadius" type="number" min="0" max="24" step="1" /></label>
+              </div>
+              <div class="mini-grid">
+                <label>Cor principal<input name="primaryColor" type="color" /></label>
+                <label>Cor destaque<input name="accentColor" type="color" /></label>
+                <label>Cor sucesso<input name="successColor" type="color" /></label>
+              </div>
+              <div class="mini-grid">
+                <label>Fundo modo escuro<input name="darkBackground" type="color" /></label>
+                <label>Fundo modo claro<input name="lightBackground" type="color" /></label>
+                <label>Imagem principal<input name="heroImage" placeholder="https://..." /></label>
+              </div>
+              <div class="mini-grid">
+                <label>Chamada pequena<input name="heroEyebrow" /></label>
+                <label>Titulo principal<input name="heroTitle" /></label>
+                <label>Texto principal<input name="heroText" /></label>
+              </div>
+            </form>
+          </section>
+
           <section class="panel">
             <h2>Produtos e fornecedores</h2>
+            <form id="linkImportForm" class="stack">
+              <label>Botao magico: colar link de produto<input name="url" placeholder="https://produto-do-fornecedor..." /></label>
+              <button type="submit">Puxar dados do link</button>
+              <p class="muted">Funciona melhor quando a pagina do fornecedor tem Open Graph ou JSON-LD. Revise preco e imagem antes de publicar.</p>
+            </form>
             <form id="productForm" class="stack">
               <input name="id" type="hidden" />
               <label>Nome<input name="name" required /></label>
@@ -75,8 +110,7 @@
           </section>
 
           <section class="panel">
-            <h2>Mercado Pago e e-mail</h2>
-            <p class="muted">Tokens, SMTP e webhook ficam no <code>server/.env</code>. Aqui voce define o endpoint usado pela loja.</p>
+            <h2>SEO</h2>
             <form id="seoForm" class="stack">
               <label>Titulo SEO<input name="title" /></label>
               <label>Descricao SEO<textarea name="description" rows="2"></textarea></label>
@@ -89,18 +123,58 @@
             </form>
           </section>
 
+          <section class="panel wide">
+            <h2>Assistente Mercado Pago e e-mail</h2>
+            <p class="muted">Cole suas informacoes uma vez. O painel grava no <code>server/.env</code>, que nao sobe para o site publico. Depois reinicie a hospedagem se o provedor exigir.</p>
+            <form id="paymentForm" class="stack">
+              <div class="mini-grid">
+                <label>Dominio publico da loja<input name="publicUrl" placeholder="https://sua-loja.com" /></label>
+                <label>Senha do admin<input name="adminPassword" type="password" placeholder="deixe vazio para manter" /></label>
+                <label>Porta local<input name="port" placeholder="3000" /></label>
+              </div>
+              <label>Access Token Mercado Pago<input name="mercadoPagoAccessToken" type="password" placeholder="APP_USR... deixe vazio para manter" /></label>
+              <div class="mini-grid">
+                <label>Webhook Mercado Pago<input name="mpWebhookUrl" placeholder="gerado automaticamente pelo dominio" /></label>
+                <label>URL sucesso<input name="successUrl" /></label>
+                <label>URL falha<input name="failureUrl" /></label>
+              </div>
+              <div class="mini-grid">
+                <label>SMTP host<input name="smtpHost" placeholder="smtp.gmail.com" /></label>
+                <label>SMTP porta<input name="smtpPort" placeholder="587" /></label>
+                <label>SMTP seguro<select name="smtpSecure"><option value="false">Nao / STARTTLS</option><option value="true">Sim / SSL</option></select></label>
+              </div>
+              <div class="mini-grid">
+                <label>SMTP usuario<input name="smtpUser" /></label>
+                <label>SMTP senha<input name="smtpPass" type="password" placeholder="deixe vazio para manter" /></label>
+                <label>E-mail remetente<input name="mailFrom" placeholder="Nexora <contato@loja.com>" /></label>
+              </div>
+              <button type="submit">Salvar pagamento e e-mail</button>
+              <p id="paymentStatus" class="muted"></p>
+            </form>
+          </section>
+
           <section class="panel">
             <h2>Dropshipping Bot</h2>
             <form id="botForm" class="stack">
-              <label>Status<select name="enabled"><option value="false">Desativado</option><option value="true">Ativado</option></select></label>
+              <label>Status<select name="dropshippingEnabled"><option value="false">Desativado</option><option value="true">Ativado</option></select></label>
               <label>Endpoint para importar produtos<input name="productEndpoint" placeholder="https://api.dropshippingbot.../products" /></label>
               <label>Endpoint para enviar pedidos<input name="orderEndpoint" placeholder="https://api.dropshippingbot.../orders" /></label>
-              <label>Token/API key<input name="token" type="password" /></label>
+              <label>Token/API key<input name="dropshippingToken" type="password" placeholder="deixe vazio para manter" /></label>
               <div class="actions">
                 <button id="importBot" type="button">Importar produtos</button>
               </div>
             </form>
             <p class="muted">Como a documentacao publica do Dropshipping Bot nao ficou disponivel, o conector aceita endpoints JSON configuraveis. Quando voce tiver a URL/token oficiais, coloca aqui.</p>
+          </section>
+
+          <section class="panel">
+            <h2>Conectores dropshipping genericos</h2>
+            <p class="muted">Para qualquer plataforma com API, use os endpoints abaixo. Para paginas sem API, use o botao magico de link no bloco de produtos.</p>
+            <ul class="muted">
+              <li>Importar catalogo: endpoint que retorne JSON de produtos.</li>
+              <li>Enviar pedidos: endpoint que receba pedido aprovado.</li>
+              <li>Token: API key/Bearer token fornecido pela plataforma.</li>
+            </ul>
           </section>
 
           <section class="panel">
@@ -131,12 +205,24 @@
             <button id="loadOrders" class="secondary" type="button">Atualizar pedidos</button>
             <div id="orderList" class="stack"></div>
           </section>
+
+          <section class="panel wide">
+            <h2>Colocar no ar</h2>
+            <p class="muted">Use um servico com Node.js para manter checkout, admin e e-mail funcionando. O GitHub fica apenas como repositorio.</p>
+            <div class="mini-grid">
+              <div class="notice"><strong>Render/Railway/Fly</strong><br>Root: <code>server</code><br>Build: <code>npm install</code><br>Start: <code>npm start</code></div>
+              <div class="notice"><strong>VPS/Hostinger Node</strong><br>Suba o repo inteiro<br>Instale em <code>server</code><br>Use PM2 ou painel Node</div>
+              <div class="notice"><strong>Variaveis</strong><br>Configure <code>ADMIN_PASSWORD</code>, <code>MERCADO_PAGO_ACCESS_TOKEN</code>, <code>PUBLIC_URL</code> e SMTP.</div>
+            </div>
+            <button id="copyDeploy" class="secondary" type="button">Copiar checklist de deploy</button>
+          </section>
         </div>
       </main>
     </section>
 
     <script>
       let state = null;
+      let settings = null;
       const money = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
       const $ = (id) => document.getElementById(id);
 
@@ -150,6 +236,10 @@
         });
       }
 
+      function productIdFromName(name) {
+        return name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      }
+
       async function api(url, options = {}) {
         const response = await fetch(url, { headers: { "Content-Type": "application/json" }, ...options });
         const data = await response.json().catch(() => ({}));
@@ -159,15 +249,22 @@
 
       async function loadState() {
         state = await api("/api/admin/state");
+        settings = await api("/api/admin/settings");
         $("loginView").classList.add("hidden");
         $("adminView").classList.remove("hidden");
         render();
       }
 
       function render() {
+        state.appearance = state.appearance || {};
+        fillForm($("appearanceForm"), state.appearance);
         fillForm($("seoForm"), state.seo);
         fillForm($("socialForm"), state.socials);
-        fillForm($("botForm"), state.integrations?.dropshippingBot || {});
+        fillForm($("paymentForm"), settings || {});
+        fillForm($("botForm"), settings || {});
+        $("paymentStatus").innerHTML = settings
+          ? `Mercado Pago: <strong class="${settings.mercadoPagoAccessTokenSet ? "ok" : ""}">${settings.mercadoPagoAccessTokenSet ? "token configurado" : "token pendente"}</strong> | SMTP: <strong class="${settings.smtpPassSet ? "ok" : ""}">${settings.smtpPassSet ? "senha configurada" : "senha pendente"}</strong>`
+          : "";
         $("campaignProduct").innerHTML = state.products.map((product) => `<option value="${product.id}">${product.name}</option>`).join("");
         $("productList").innerHTML = state.products.map((product) => `
           <div class="row">
@@ -184,13 +281,16 @@
       }
 
       async function saveAll() {
+        state.appearance = dataFromForm($("appearanceForm"));
+        state.appearance.cardRadius = Number(state.appearance.cardRadius || 8);
         state.seo = dataFromForm($("seoForm"));
         state.socials = dataFromForm($("socialForm"));
-        state.integrations = state.integrations || {};
-        state.integrations.dropshippingBot = dataFromForm($("botForm"));
-        state.integrations.dropshippingBot.enabled = state.integrations.dropshippingBot.enabled === "true";
         await api("/api/admin/state", { method: "PUT", body: JSON.stringify(state) });
         alert("Alteracoes salvas na loja.");
+      }
+
+      function settingsPayload() {
+        return { ...dataFromForm($("paymentForm")), ...dataFromForm($("botForm")) };
       }
 
       $("loginForm").addEventListener("submit", async (event) => {
@@ -203,10 +303,27 @@
         }
       });
 
+      $("linkImportForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const button = event.currentTarget.querySelector("button");
+        button.disabled = true;
+        button.textContent = "Buscando...";
+        try {
+          const product = await api("/api/admin/product-from-link", { method: "POST", body: JSON.stringify(dataFromForm(event.currentTarget)) });
+          fillForm($("productForm"), product);
+          alert("Produto puxado do link. Revise os dados e clique em Adicionar/atualizar.");
+        } catch (error) {
+          alert(error.message);
+        } finally {
+          button.disabled = false;
+          button.textContent = "Puxar dados do link";
+        }
+      });
+
       $("productForm").addEventListener("submit", (event) => {
         event.preventDefault();
         const data = dataFromForm(event.currentTarget);
-        const id = data.id || data.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const id = data.id || productIdFromName(data.name);
         const product = { ...data, id, price: Number(data.price) };
         state.products = state.products.some((item) => item.id === id) ? state.products.map((item) => item.id === id ? product : item) : [...state.products, product];
         event.currentTarget.reset();
@@ -235,13 +352,30 @@
       });
 
       $("saveAll").addEventListener("click", saveAll);
+      $("paymentForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        $("paymentStatus").textContent = "Salvando...";
+        settings = await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(settingsPayload()) });
+        render();
+        $("paymentStatus").innerHTML = "Pagamento/e-mail salvos. Webhook: <code>" + (settings.mpWebhookUrl || "configure o dominio publico") + "</code>";
+      });
       $("clearProduct").addEventListener("click", () => $("productForm").reset());
       $("clearCampaign").addEventListener("click", () => $("campaignForm").reset());
       $("logout").addEventListener("click", async () => { await api("/api/admin/logout", { method: "POST" }); location.reload(); });
-      $("importBot").addEventListener("click", async () => { await saveAll(); const result = await api("/api/admin/dropshipping/import", { method: "POST" }); alert(`${result.imported} produtos importados.`); await loadState(); });
+      $("importBot").addEventListener("click", async () => {
+        settings = await api("/api/admin/settings", { method: "PUT", body: JSON.stringify(settingsPayload()) });
+        const result = await api("/api/admin/dropshipping/import", { method: "POST" });
+        alert(`${result.imported} produtos importados.`);
+        await loadState();
+      });
       $("loadOrders").addEventListener("click", async () => {
         const orders = await api("/api/admin/orders");
         $("orderList").innerHTML = orders.slice().reverse().map((order) => `<div class="row"><div><strong>${order.id}</strong><p class="muted">${order.status} | ${money.format(order.total)} | ${order.customer?.email || ""}</p></div></div>`).join("") || "<p class='muted'>Nenhum pedido ainda.</p>";
+      });
+      $("copyDeploy").addEventListener("click", async () => {
+        const text = "Deploy Nexora\\n1. Hospedagem com Node.js\\n2. Root: server\\n3. Build: npm install\\n4. Start: npm start\\n5. Variaveis: ADMIN_PASSWORD, ADMIN_SECRET, PUBLIC_URL, MERCADO_PAGO_ACCESS_TOKEN, MP_WEBHOOK_URL, SMTP_HOST, SMTP_USER, SMTP_PASS, MAIL_FROM\\n6. Mercado Pago: configure webhook para /api/webhooks/mercadopago";
+        await navigator.clipboard.writeText(text);
+        alert("Checklist copiado.");
       });
 
       loadState().catch(() => {});

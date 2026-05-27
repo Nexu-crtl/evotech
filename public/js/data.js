@@ -47,12 +47,23 @@ const NEXORA_DEFAULTS = {
     mercadoPagoLink: "",
     mercadoPagoApi: "/api/checkout"
   },
+  appearance: {
+    brandName: "NEXORA",
+    logoText: "N",
+    primaryColor: "#083b7a",
+    accentColor: "#6f42ff",
+    successColor: "#62c99a",
+    darkBackground: "#07111f",
+    lightBackground: "#f5f7fb",
+    cardRadius: 8,
+    heroImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=80",
+    heroEyebrow: "Dropshipping tech selecionado",
+    heroTitle: "NEXORA",
+    heroText: "Eletronicos, gadgets e acessorios para transformar seu setup com compra simples, visual limpo e checkout rapido."
+  },
   integrations: {
     dropshippingBot: {
-      enabled: false,
-      productEndpoint: "",
-      orderEndpoint: "",
-      token: ""
+      enabled: false
     }
   },
   socials: {
